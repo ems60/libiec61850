@@ -1096,8 +1096,6 @@ iedConnection_handleReport(IedConnection self, MmsValue* value)
         }
     }
 
-    
-
 //     if (DEBUG_IED_CLIENT)
 //         printf("IED_CLIENT: Report includes %i data set elements of %i\n", includedElements,
 //             dataSetSize);
@@ -1119,128 +1117,7 @@ iedConnection_handleReport(IedConnection self, MmsValue* value)
         matchingReport->callback(matchingReport->callbackParameter, matchingReport);
 
     Semaphore_post(self->reportHandlerMutex);
-
     return;
-
-    int valueIndex = inclusionIndex + 1;
-    int includedElements = MmsValue_getNumberOfSetBits(inclusion);
-    /* parse data-references if required */
-    if (MmsValue_getBitStringBit(optFlds, 5) == true) {
-
-        if (matchingReport->dataReferences == NULL)
-            matchingReport->dataReferences = MmsValue_createEmptyArray(dataSetSize);
-
-        matchingReport->hasDataReference = true;
-
-        int elementIndex;
-
-        for (elementIndex = 0; elementIndex < dataSetSize; elementIndex++) {
-            if (MmsValue_getBitStringBit(inclusion, elementIndex) == true) {
-                MmsValue* dataSetElement = MmsValue_getElement(matchingReport->dataReferences, elementIndex);
-
-                if (dataSetElement == NULL) {
-
-                    MmsValue* dataRefValue = MmsValue_getElement(value, valueIndex);
-
-                    if ((dataRefValue == NULL) || (MmsValue_getType(dataRefValue) != MMS_VISIBLE_STRING)) {
-                        if (DEBUG_IED_CLIENT)
-                            printf("IED_CLIENT: report contains invalid data reference\n");
-                    }
-                    else {
-                        dataSetElement = MmsValue_clone(dataRefValue);
-
-                        MmsValue_setElement(matchingReport->dataReferences, elementIndex, dataSetElement);
-                    }
-                }
-
-                valueIndex += 1;
-            }
-        }
-    }
-
-    int i;
-
-    if (matchingReport->dataSetValues == NULL) {
-        matchingReport->dataSetValues = MmsValue_createEmptyArray(dataSetSize);
-        matchingReport->reasonForInclusion = (ReasonForInclusion*)
-            GLOBAL_MALLOC(sizeof(ReasonForInclusion) * dataSetSize);
-
-        int elementIndex;
-
-        for (elementIndex = 0; elementIndex < dataSetSize; elementIndex++)
-            matchingReport->reasonForInclusion[elementIndex] = IEC61850_REASON_NOT_INCLUDED;
-
-    }
-
-    MmsValue* dataSetValues = matchingReport->dataSetValues;
-
-    bool hasReasonForInclusion = MmsValue_getBitStringBit(optFlds, 3);
-
-    if (hasReasonForInclusion)
-        matchingReport->hasReasonForInclusion = true;
-
-    for (i = 0; i < dataSetSize; i++) {
-        if (MmsValue_getBitStringBit(inclusion, i) == true) {
-
-            MmsValue* dataSetElement = MmsValue_getElement(dataSetValues, i);
-
-            MmsValue* newElementValue = MmsValue_getElement(value, valueIndex);
-
-            if (newElementValue == NULL) {
-                if (DEBUG_IED_CLIENT)
-                    printf("IED_CLIENT: report is missing expected element value\n");
-
-                goto exit_function;
-            }
-
-            if (dataSetElement == NULL)
-                MmsValue_setElement(dataSetValues, i, MmsValue_clone(newElementValue));
-            else
-                MmsValue_update(dataSetElement, newElementValue);
-
-            if (DEBUG_IED_CLIENT)
-                printf("IED_CLIENT: update element value type: %i\n", MmsValue_getType(newElementValue));
-
-            if (hasReasonForInclusion) {
-                MmsValue* reasonForInclusion = MmsValue_getElement(value, includedElements + valueIndex);
-
-                if ((reasonForInclusion == NULL) || (MmsValue_getType(reasonForInclusion) != MMS_BIT_STRING)) {
-                    if (DEBUG_IED_CLIENT)
-                        printf("IED_CLIENT: report contains invalid reason-for-inclusion\n");
-
-                    goto exit_function;
-                }
-
-                matchingReport->reasonForInclusion[i] = IEC61850_REASON_NOT_INCLUDED;
-
-                if (MmsValue_getBitStringBit(reasonForInclusion, 1) == true)
-                    matchingReport->reasonForInclusion[i] |= (ReasonForInclusion)IEC61850_REASON_DATA_CHANGE;
-                if (MmsValue_getBitStringBit(reasonForInclusion, 2) == true)
-                    matchingReport->reasonForInclusion[i] |= IEC61850_REASON_QUALITY_CHANGE;
-                if (MmsValue_getBitStringBit(reasonForInclusion, 3) == true)
-                    matchingReport->reasonForInclusion[i] |= IEC61850_REASON_DATA_UPDATE;
-                if (MmsValue_getBitStringBit(reasonForInclusion, 4) == true)
-                    matchingReport->reasonForInclusion[i] |= IEC61850_REASON_INTEGRITY;
-                if (MmsValue_getBitStringBit(reasonForInclusion, 5) == true)
-                    matchingReport->reasonForInclusion[i] |= IEC61850_REASON_GI;
-            }
-            else {
-                matchingReport->reasonForInclusion[i] = IEC61850_REASON_UNKNOWN;
-            }
-
-            valueIndex++;
-        }
-        else {
-            matchingReport->reasonForInclusion[i] = IEC61850_REASON_NOT_INCLUDED;
-        }
-    }
-
-    Semaphore_wait(self->reportHandlerMutex);
-
-    if (matchingReport->callback != NULL)
-        matchingReport->callback(matchingReport->callbackParameter, matchingReport);
-
-    Semaphore_post(self->reportHandlerMutex);
 
 exit_function:
     return;
