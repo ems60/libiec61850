@@ -207,7 +207,7 @@ exit_function:
 }
 
 ControlObjectClient
-ControlObjectClient_create(const char* objectReference, IedConnection connection)
+ControlObjectClient_create(const char* objectReference, IedConnection connection, const FunctionalConstraint FC)
 {
     ControlObjectClient self = NULL;
 
@@ -232,7 +232,7 @@ ControlObjectClient_create(const char* objectReference, IedConnection connection
     }
 
     MmsVariableSpecification* ctlVarSpec =
-            IedConnection_getVariableSpecification(connection, &error, objectReference, IEC61850_FC_CO);
+            IedConnection_getVariableSpecification(connection, &error, objectReference, FC);
 
     if (error != IED_ERROR_OK) {
         if (DEBUG_IED_CLIENT)
@@ -477,7 +477,7 @@ prepareOperParameters(ControlObjectClient self, MmsValue* ctlVal, uint64_t operT
 }
 
 bool
-ControlObjectClient_operate(ControlObjectClient self, MmsValue* ctlVal, uint64_t operTime)
+ControlObjectClient_operate(ControlObjectClient self, MmsValue* ctlVal, uint64_t operTime, const FunctionalConstraint FC)
 {
     bool success = false;
 
@@ -495,7 +495,7 @@ ControlObjectClient_operate(ControlObjectClient self, MmsValue* ctlVal, uint64_t
 
     MmsMapping_getMmsDomainFromObjectReference(self->objectReference, domainId);
 
-    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, "CO");
+    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, FunctionalConstraint_toString(FC));
 
     StringUtils_appendString(itemId, 65, "$Oper");
 
@@ -704,7 +704,7 @@ prepareSBOwParameters(ControlObjectClient self, MmsValue* ctlVal)
 }
 
 bool
-ControlObjectClient_selectWithValue(ControlObjectClient self, MmsValue* ctlVal)
+ControlObjectClient_selectWithValue(ControlObjectClient self, MmsValue* ctlVal, const FunctionalConstraint FC)
 {
     bool retVal = true;
 
@@ -715,7 +715,7 @@ ControlObjectClient_selectWithValue(ControlObjectClient self, MmsValue* ctlVal)
 
     MmsMapping_getMmsDomainFromObjectReference(self->objectReference, domainId);
 
-    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, "CO");
+    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, FunctionalConstraint_toString(FC));
 
     StringUtils_appendString(itemId, 65, "$SBOw");
 
@@ -1109,7 +1109,7 @@ createCancelParameters(ControlObjectClient self)
 }
 
 bool
-ControlObjectClient_cancel(ControlObjectClient self)
+ControlObjectClient_cancel(ControlObjectClient self, const FunctionalConstraint FC)
 {
     resetLastApplError(self);
 
@@ -1120,7 +1120,7 @@ ControlObjectClient_cancel(ControlObjectClient self)
 
     MmsMapping_getMmsDomainFromObjectReference(self->objectReference, domainId);
 
-    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, "CO");
+    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, FunctionalConstraint_toString(FC));
 
     StringUtils_appendString(itemId, 65, "$Cancel");
 

@@ -38,4 +38,7 @@ MmsMapping_ObjectReferenceToVariableAccessSpec(char* objectReference);
 LIB61850_INTERNAL char*
 MmsMapping_varAccessSpecToObjectReference(MmsVariableAccessSpecification* varAccessSpec);
 
+LIB61850_INTERNAL char*
+MmsMapping_varAccessSpecToObjectReference2(MmsVariableAccessSpecification* varAccessSpec);
+
 #endif /* SRC_IEC61850_INC_PRIVATE_IEC61850_COMMON_INTERNAL_H_ */

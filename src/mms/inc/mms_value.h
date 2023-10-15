@@ -710,6 +710,9 @@ LIB61850_API MmsValue*
 MmsValue_newBitString(int bitSize);
 
 LIB61850_API MmsValue*
+MmsValue_resizeBitString(MmsValue* self, int bitSize);
+
+LIB61850_API MmsValue*
 MmsValue_newOctetString(int size, int maxSize);
 
 LIB61850_API MmsValue*

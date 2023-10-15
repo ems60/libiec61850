@@ -1157,7 +1157,7 @@ typedef int ReasonForInclusion;
 #define REASON_DATA_UPDATE IEC61850_REASON_DATA_UPDATE
 #define REASON_INTEGRITY IEC61850_REASON_INTEGRITY
 #define REASON_GI IEC61850_REASON_GI
-#define REASON_UNKNOWN IEC61850_REASON_UNKNOWN
+//#define REASON_UNKNOWN IEC61850_REASON_UNKNOWN
 
 
 /* Element encoding mask values for ClientReportControlBlock */
@@ -1320,6 +1320,24 @@ ClientReport_getDataSetName(ClientReport self);
  */
 LIB61850_API MmsValue*
 ClientReport_getDataSetValues(ClientReport self);
+
+/**
+ * 获取本次报告中缓存区数据，不需要业务层删除此对象
+ */
+LIB61850_API MmsValue*
+ClientReport_getDataValues(ClientReport self);
+
+/**
+* 获取本次报告中数据位标记，标记了本报告中数据集包含了哪些测点
+*/
+LIB61850_API MmsValue*
+ClientReport_getInclusion(ClientReport self);
+
+/**
+* 获取本次报告中第一个测点的索引
+*/
+LIB61850_API int
+ClientReport_getValueIndex(ClientReport self);
 
 /**
  * \brief return reference (name) of the server RCB associated with this ClientReport object
@@ -2028,7 +2046,7 @@ typedef struct sControlObjectClient* ControlObjectClient;
  * \return the newly created instance or NULL if the creation failed
  */
 LIB61850_API ControlObjectClient
-ControlObjectClient_create(const char* objectReference, IedConnection connection);
+ControlObjectClient_create(const char* objectReference, IedConnection connection, const FunctionalConstraint FC);
 
 /**
  * \brief Create a new client control object - doesn't send requests to the server (doesn't block)
@@ -2159,7 +2177,7 @@ ControlObjectClient_getLastError(ControlObjectClient self);
  * \return true if operation has been successful, false otherwise.
  */
 LIB61850_API bool
-ControlObjectClient_operate(ControlObjectClient self, MmsValue* ctlVal, uint64_t operTime);
+ControlObjectClient_operate(ControlObjectClient self, MmsValue* ctlVal, uint64_t operTime,const FunctionalConstraint FC);
 
 /**
  * \brief Send a select command to the server
@@ -2186,7 +2204,7 @@ ControlObjectClient_select(ControlObjectClient self);
  * \return true if select has been successful, false otherwise.
  */
 LIB61850_API bool
-ControlObjectClient_selectWithValue(ControlObjectClient self, MmsValue* ctlVal);
+ControlObjectClient_selectWithValue(ControlObjectClient self, MmsValue* ctlVal,const FunctionalConstraint FC);
 
 /**
  * \brief Send a cancel command to the server
@@ -2199,7 +2217,7 @@ ControlObjectClient_selectWithValue(ControlObjectClient self, MmsValue* ctlVal);
  * \return true if operation has been successful, false otherwise.
  */
 LIB61850_API bool
-ControlObjectClient_cancel(ControlObjectClient self);
+ControlObjectClient_cancel(ControlObjectClient self,const FunctionalConstraint FC);
 
 
 /**

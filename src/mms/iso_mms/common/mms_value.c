@@ -270,6 +270,12 @@ MmsValue_update(MmsValue* self, const MmsValue* update)
             case MMS_BIT_STRING:
                 if (self->value.bitString.size == update->value.bitString.size)
                     memcpy(self->value.bitString.buf, update->value.bitString.buf, bitStringByteSize(self));
+                else if (self->value.bitString.size < update->value.bitString.size) {
+                    //如果原来的空间太小，则扩充
+                    if (NULL != MmsValue_resizeBitString(self, update->value.bitString.size)) {
+                        memcpy(self->value.bitString.buf, update->value.bitString.buf, bitStringByteSize(self));
+                    }
+                }
                 else {
                     int i;
 
@@ -365,6 +371,22 @@ MmsValue_newBitString(int bitSize)
     self->type = MMS_BIT_STRING;
     self->value.bitString.size = abs(bitSize);
     self->value.bitString.buf = (uint8_t*) GLOBAL_CALLOC(bitStringByteSize(self), 1);
+
+    if (self->value.bitString.buf == NULL) {
+        GLOBAL_FREEMEM(self);
+        self = NULL;
+    }
+
+    return self;
+}
+
+LIB61850_API MmsValue* MmsValue_resizeBitString(MmsValue* self, int bitSize)
+{
+    if (self == NULL)
+        return NULL;
+
+    self->value.bitString.size = abs(bitSize);
+    self->value.bitString.buf = (uint8_t*)GLOBAL_REALLOC(self->value.bitString.buf, 1);
 
     if (self->value.bitString.buf == NULL) {
         GLOBAL_FREEMEM(self);

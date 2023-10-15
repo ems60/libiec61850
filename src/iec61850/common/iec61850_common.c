@@ -757,6 +757,83 @@ char*
 MmsMapping_varAccessSpecToObjectReference(MmsVariableAccessSpecification* varAccessSpec)
 {
     char* domainId = varAccessSpec->domainId;
+    int domainIdLen = strlen(domainId);
+
+    char* itemId = varAccessSpec->itemId;
+    int itemIdLen = strlen(itemId);
+
+    int arrayIndexLen = 0;
+    int componentPartLen = 0;
+
+    //componentName不确定作用，所以暂不处理
+    /*
+    if (varAccessSpec->componentName != NULL)
+        componentPartLen = strlen(varAccessSpec->componentName);
+    */
+
+    if (varAccessSpec->arrayIndex > -1)
+        arrayIndexLen = 2 + getNumberOfDigits(varAccessSpec->arrayIndex); //2是括号占用位置 ()
+
+    //第1个1是domainId和itemId中间的/,第2个1是最后0占用位置
+    int newStringLen = domainIdLen + 1 + itemIdLen + arrayIndexLen + componentPartLen + 1;
+
+    char* newString = (char*)GLOBAL_MALLOC(newStringLen);
+
+    char* targetPos = newString;
+
+    /* Copy domain id part */
+    char* currentPos = domainId;
+
+    while (currentPos < (domainId + domainIdLen)) {
+        *targetPos = *currentPos;
+        targetPos++;
+        currentPos++;
+    }
+
+    *targetPos = '/';
+    targetPos++;
+
+    /* Copy item id parts */
+    currentPos = itemId;
+
+    while (currentPos < (itemId + itemIdLen)) {
+        *targetPos = *currentPos;
+        targetPos++;
+        currentPos++;
+    }
+
+    /* Add array index part */
+    if (varAccessSpec->arrayIndex > -1) {
+        sprintf(targetPos, "(%i)", varAccessSpec->arrayIndex);
+        targetPos += arrayIndexLen;
+    }
+
+    /* Add component part. 这一部分不知道什么意思，所以暂不处理 */
+    /*
+    if (varAccessSpec->componentName != NULL) {
+        *targetPos = '.';
+        targetPos++;
+
+        int i;
+        for (i = 0; i < componentPartLen; i++) {
+            if (varAccessSpec->componentName[i] == '$')
+                *targetPos = '.';
+            else
+                *targetPos = varAccessSpec->componentName[i];
+
+            targetPos++;
+        }
+    }
+    */
+    *targetPos = 0; /* add terminator */
+
+    return newString;
+}
+
+char*
+MmsMapping_varAccessSpecToObjectReference2(MmsVariableAccessSpecification* varAccessSpec)
+{
+    char* domainId = varAccessSpec->domainId;
 
     int domainIdLen = strlen(domainId);
 

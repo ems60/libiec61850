@@ -23,7 +23,7 @@ Integer32_constraint(asn_TYPE_descriptor_t *td, const void *sptr,
 	
 	value = *(const long *)sptr;
 	
-	if((value >= -2147483648 && value <= 2147483647)) {
+	if((value >= INT_MIN && value <= INT_MAX)) {
 		/* Constraint check succeeded */
 		return 0;
 	} else {
