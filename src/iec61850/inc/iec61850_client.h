@@ -2190,7 +2190,7 @@ ControlObjectClient_operate(ControlObjectClient self, MmsValue* ctlVal, uint64_t
  * \return true if operation has been successful, false otherwise.
  */
 LIB61850_API bool
-ControlObjectClient_select(ControlObjectClient self);
+ControlObjectClient_select(ControlObjectClient self, const FunctionalConstraint FC);
 
 /**
  * \brief Send an select with value command to the server
@@ -2235,7 +2235,7 @@ ControlObjectClient_cancel(ControlObjectClient self,const FunctionalConstraint F
  */
 LIB61850_API uint32_t
 ControlObjectClient_operateAsync(ControlObjectClient self, IedClientError* err, MmsValue* ctlVal, uint64_t operTime,
-        ControlObjectClient_ControlActionHandler handler, void* parameter);
+        ControlObjectClient_ControlActionHandler handler, void* parameter, const FunctionalConstraint FC);
 
 /**
  * \brief Send a select command to the server - async version
@@ -2251,7 +2251,7 @@ ControlObjectClient_operateAsync(ControlObjectClient self, IedClientError* err, 
  * \return the invoke ID of the request
  */
 LIB61850_API uint32_t
-ControlObjectClient_selectAsync(ControlObjectClient self, IedClientError* err, ControlObjectClient_ControlActionHandler handler, void* parameter);
+ControlObjectClient_selectAsync(ControlObjectClient self, IedClientError* err, ControlObjectClient_ControlActionHandler handler, void* parameter, const FunctionalConstraint FC);
 
 /**
  * \brief Send a select-with-value command to the server - async version
@@ -2269,7 +2269,7 @@ ControlObjectClient_selectAsync(ControlObjectClient self, IedClientError* err, C
  */
 LIB61850_API uint32_t
 ControlObjectClient_selectWithValueAsync(ControlObjectClient self, IedClientError* err, MmsValue* ctlVal,
-        ControlObjectClient_ControlActionHandler handler, void* parameter);
+        ControlObjectClient_ControlActionHandler handler, void* parameter, const FunctionalConstraint FC);
 
 /**
  * \brief Send a cancel command to the server - async version
@@ -2285,7 +2285,7 @@ ControlObjectClient_selectWithValueAsync(ControlObjectClient self, IedClientErro
  * \return the invoke ID of the request
  */
 LIB61850_API uint32_t
-ControlObjectClient_cancelAsync(ControlObjectClient self, IedClientError* err, ControlObjectClient_ControlActionHandler handler, void* parameter);
+ControlObjectClient_cancelAsync(ControlObjectClient self, IedClientError* err, ControlObjectClient_ControlActionHandler handler, void* parameter, const FunctionalConstraint FC);
 
 /**
  * \brief Get the last received control application error

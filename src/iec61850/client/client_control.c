@@ -461,6 +461,7 @@ prepareOperParameters(ControlObjectClient self, MmsValue* ctlVal, uint64_t operT
     MmsValue_setBitStringBit(check, 0, self->synchroCheck);
     MmsValue_setElement(operParameters, index++, check);
 
+    /*
     char domainId[65];
     char itemId[65];
 
@@ -469,9 +470,10 @@ prepareOperParameters(ControlObjectClient self, MmsValue* ctlVal, uint64_t operT
     convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, "CO");
 
     StringUtils_appendString(itemId, 65, "$Oper");
-
+    
     if (DEBUG_IED_CLIENT)
         printf("IED_CLIENT: operate: %s/%s\n", domainId, itemId);
+    */
 
     return operParameters;
 }
@@ -571,7 +573,7 @@ internalOperateHandler(uint32_t invokeId, void* parameter, MmsError err, MmsData
 
 uint32_t
 ControlObjectClient_operateAsync(ControlObjectClient self, IedClientError* err, MmsValue* ctlVal, uint64_t operTime,
-        ControlObjectClient_ControlActionHandler handler, void* parameter)
+        ControlObjectClient_ControlActionHandler handler, void* parameter, const FunctionalConstraint FC)
 {
     *err = IED_ERROR_OK;
     uint32_t invokeId = 0;
@@ -598,7 +600,7 @@ ControlObjectClient_operateAsync(ControlObjectClient self, IedClientError* err, 
 
     MmsMapping_getMmsDomainFromObjectReference(self->objectReference, domainId);
 
-    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, "CO");
+    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, FunctionalConstraint_toString(FC));
 
     StringUtils_appendString(itemId, 65, "$Oper");
 
@@ -818,7 +820,7 @@ internalSelWithValHandler(uint32_t invokeId, void* parameter, MmsError err, MmsD
 
 uint32_t
 ControlObjectClient_selectWithValueAsync(ControlObjectClient self, IedClientError* err, MmsValue* ctlVal,
-        ControlObjectClient_ControlActionHandler handler, void* parameter)
+        ControlObjectClient_ControlActionHandler handler, void* parameter, const FunctionalConstraint FC)
 {
     *err = IED_ERROR_OK;
     uint32_t invokeId = 0;
@@ -844,7 +846,7 @@ ControlObjectClient_selectWithValueAsync(ControlObjectClient self, IedClientErro
 
     MmsMapping_getMmsDomainFromObjectReference(self->objectReference, domainId);
 
-    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, "CO");
+    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, FunctionalConstraint_toString(FC));
 
     StringUtils_appendString(itemId, 65, "$SBOw");
 
@@ -881,7 +883,7 @@ exit_function:
 }
 
 bool
-ControlObjectClient_select(ControlObjectClient self)
+ControlObjectClient_select(ControlObjectClient self, const FunctionalConstraint FC)
 {
     resetLastApplError(self);
 
@@ -890,7 +892,7 @@ ControlObjectClient_select(ControlObjectClient self)
 
     MmsMapping_getMmsDomainFromObjectReference(self->objectReference, domainId);
 
-    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, "CO");
+    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, FunctionalConstraint_toString(FC));
 
     StringUtils_appendString(itemId, 65, "$SBO");
 
@@ -972,6 +974,7 @@ internalSelectHandler(uint32_t invokeId, void* parameter, MmsError err, MmsValue
             }
             else if (MmsValue_getType(value) == MMS_VISIBLE_STRING) {
 
+                /*仅调试作用，去除
                 char domainId[65];
                 char itemId[65];
 
@@ -980,7 +983,7 @@ internalSelectHandler(uint32_t invokeId, void* parameter, MmsError err, MmsValue
                 convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, "CO");
 
                 StringUtils_appendString(itemId, 65, "$SBO");
-
+                */
                 if (strcmp(MmsValue_toString(value), "") == 0) {
                     if (DEBUG_IED_CLIENT)
                         printf("select-response-\n");
@@ -1010,7 +1013,7 @@ internalSelectHandler(uint32_t invokeId, void* parameter, MmsError err, MmsValue
 }
 
 uint32_t
-ControlObjectClient_selectAsync(ControlObjectClient self, IedClientError* err, ControlObjectClient_ControlActionHandler handler, void* parameter)
+ControlObjectClient_selectAsync(ControlObjectClient self, IedClientError* err, ControlObjectClient_ControlActionHandler handler, void* parameter, const FunctionalConstraint FC)
 {
     *err = IED_ERROR_OK;
     uint32_t invokeId = 0;
@@ -1022,7 +1025,7 @@ ControlObjectClient_selectAsync(ControlObjectClient self, IedClientError* err, C
 
     MmsMapping_getMmsDomainFromObjectReference(self->objectReference, domainId);
 
-    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, "CO");
+    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, FunctionalConstraint_toString(FC));
 
     StringUtils_appendString(itemId, 65, "$SBO");
 
@@ -1199,7 +1202,7 @@ internalCancelHandler(uint32_t invokeId, void* parameter, MmsError err, MmsDataA
 }
 
 uint32_t
-ControlObjectClient_cancelAsync(ControlObjectClient self, IedClientError* err, ControlObjectClient_ControlActionHandler handler, void* parameter)
+ControlObjectClient_cancelAsync(ControlObjectClient self, IedClientError* err, ControlObjectClient_ControlActionHandler handler, void* parameter, const FunctionalConstraint FC)
 {
     *err = IED_ERROR_OK;
     uint32_t invokeId = 0;
@@ -1220,7 +1223,7 @@ ControlObjectClient_cancelAsync(ControlObjectClient self, IedClientError* err, C
 
     MmsMapping_getMmsDomainFromObjectReference(self->objectReference, domainId);
 
-    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, "CO");
+    convertToMmsAndInsertFC(itemId, self->objectReference + strlen(domainId) + 1, FunctionalConstraint_toString(FC));
 
     StringUtils_appendString(itemId, 65, "$Cancel");
 
