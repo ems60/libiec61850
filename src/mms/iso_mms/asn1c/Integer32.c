@@ -6,7 +6,7 @@
  */
 
 #include <asn_internal.h>
-
+#include <limits.h>
 #include "Integer32.h"
 
 int
