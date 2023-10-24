@@ -68,6 +68,7 @@ struct sControlObjectClient
     uint8_t ctlNum;
     char* orIdent;
     int orCat;
+    MmsVariableSpecification* ctlVarSpec;
 };
 
 static void
@@ -242,8 +243,8 @@ ControlObjectClient_create(const char* objectReference, IedConnection connection
     }
 
     self = ControlObjectClient_createEx(objectReference, connection, (ControlModel) ctlModel, ctlVarSpec);
-
-    MmsVariableSpecification_destroy(ctlVarSpec);
+    self->ctlVarSpec = ctlVarSpec;
+    //MmsVariableSpecification_destroy(ctlVarSpec);
 
 exit_function:
     return self;
@@ -266,6 +267,12 @@ ControlObjectClient_destroy(ControlObjectClient self)
 
         if (self->orIdent != NULL)
             GLOBAL_FREEMEM(self->orIdent);
+
+        if (self->ctlVarSpec != NULL)
+        {
+            MmsVariableSpecification_destroy(self->ctlVarSpec);
+            self->ctlVarSpec = NULL;
+        }
 
         GLOBAL_FREEMEM(self);
     }
@@ -405,61 +412,82 @@ prepareOperParameters(ControlObjectClient self, MmsValue* ctlVal, uint64_t operT
         }
     }
 
-    MmsValue_setElement(operParameters, 0, ctlVal);
-
-    int index = 1;
-
-    if (self->hasTimeActivatedMode) {
-        MmsValue* operTm = MmsValue_newUtcTimeByMsTime(operTime);
-        MmsValue_setElement(operParameters, index++, operTm);
-    }
-
-    MmsValue* origin = createOriginValue(self);
-    MmsValue_setElement(operParameters, index++, origin);
-
-    if (!((self->ctlModel == CONTROL_MODEL_SBO_NORMAL) ||
-            (self->ctlModel == CONTROL_MODEL_SBO_ENHANCED)))
+    int index = 0;
+    //因为在ControlObjectClient_Create中已经校验了本结构，所以此处一定会成功
+    MmsVariableSpecification* oper = MmsVariableSpecification_getNamedVariableRecursive(self->ctlVarSpec, "Oper");
+    for (int i = 0; i < oper->typeSpec.structure.elementCount; i++) 
     {
-        self->ctlNum++;
+        //printf("%s\n", oper->typeSpec.structure.elements[i]->name);
+        if (strcmp(oper->typeSpec.structure.elements[i]->name,"ctlVal") == 0 ||
+            strcmp(oper->typeSpec.structure.elements[i]->name, "setMag") == 0)
+        {
+            MmsValue_setElement(operParameters, index++, ctlVal);
+        }
+        else if (strcmp(oper->typeSpec.structure.elements[i]->name, "operTm") == 0)
+        {
+            if (self->hasTimeActivatedMode) {
+                MmsValue* operTm = MmsValue_newUtcTimeByMsTime(operTime);
+                MmsValue_setElement(operParameters, index++, operTm);
+            }
+        }
+        else if (strcmp(oper->typeSpec.structure.elements[i]->name, "origin") == 0)
+        {
+            MmsValue* origin = createOriginValue(self);
+            MmsValue_setElement(operParameters, index++, origin);
+        }
+        else if (strcmp(oper->typeSpec.structure.elements[i]->name, "ctlNum") == 0)
+        {
+            if (!((self->ctlModel == CONTROL_MODEL_SBO_NORMAL) ||
+                (self->ctlModel == CONTROL_MODEL_SBO_ENHANCED)))
+            {
+                self->ctlNum++;
+            }
+
+            if (self->hasCtlNum) {
+                MmsValue* ctlNum = MmsValue_newUnsignedFromUint32(self->ctlNum);
+                MmsValue_setElement(operParameters, index++, ctlNum);
+            }
+        }
+        else if (strcmp(oper->typeSpec.structure.elements[i]->name, "T") == 0)
+        {
+            uint64_t timestamp;
+
+            if ((self->ctlModel == CONTROL_MODEL_SBO_ENHANCED) && (self->useConstantT))
+                timestamp = self->constantT;
+            else
+                timestamp = Hal_getTimeInMs();
+
+            if (self->useConstantT)
+                self->constantT = timestamp;
+
+            MmsValue* ctlTime;
+
+            if (self->edition == 2) {
+                ctlTime = MmsValue_newUtcTimeByMsTime(timestamp);
+
+                if (self->connection)
+                    MmsValue_setUtcTimeQuality(ctlTime, self->connection->timeQuality);
+            }
+            else {
+                ctlTime = MmsValue_newBinaryTime(false);
+                MmsValue_setBinaryTime(ctlTime, timestamp);
+            }
+
+            MmsValue_setElement(operParameters, index++, ctlTime);
+        }
+        else if (strcmp(oper->typeSpec.structure.elements[i]->name, "Test") == 0)
+        {
+            MmsValue* ctlTest = MmsValue_newBoolean(self->test);
+            MmsValue_setElement(operParameters, index++, ctlTest);
+        }
+        else if (strcmp(oper->typeSpec.structure.elements[i]->name, "Check") == 0)
+        {
+            MmsValue* check = MmsValue_newBitString(2);
+            MmsValue_setBitStringBit(check, 1, self->interlockCheck);
+            MmsValue_setBitStringBit(check, 0, self->synchroCheck);
+            MmsValue_setElement(operParameters, index++, check);
+        }
     }
-
-    if (self->hasCtlNum) {
-        MmsValue* ctlNum = MmsValue_newUnsignedFromUint32(self->ctlNum);
-        MmsValue_setElement(operParameters, index++, ctlNum);
-    }
-
-    uint64_t timestamp;
-
-    if ((self->ctlModel == CONTROL_MODEL_SBO_ENHANCED) && (self->useConstantT))
-        timestamp = self->constantT;
-    else
-        timestamp = Hal_getTimeInMs();
-
-    if (self->useConstantT)
-        self->constantT = timestamp;
-
-    MmsValue* ctlTime;
-
-    if (self->edition == 2) {
-        ctlTime = MmsValue_newUtcTimeByMsTime(timestamp);
-
-        if (self->connection)
-            MmsValue_setUtcTimeQuality(ctlTime, self->connection->timeQuality);
-    }
-    else {
-        ctlTime = MmsValue_newBinaryTime(false);
-        MmsValue_setBinaryTime(ctlTime, timestamp);
-    }
-
-    MmsValue_setElement(operParameters, index++, ctlTime);
-
-    MmsValue* ctlTest = MmsValue_newBoolean(self->test);
-    MmsValue_setElement(operParameters, index++, ctlTest);
-
-    MmsValue* check = MmsValue_newBitString(2);
-    MmsValue_setBitStringBit(check, 1, self->interlockCheck);
-    MmsValue_setBitStringBit(check, 0, self->synchroCheck);
-    MmsValue_setElement(operParameters, index++, check);
 
     /*
     char domainId[65];
@@ -655,52 +683,72 @@ prepareSBOwParameters(ControlObjectClient self, MmsValue* ctlVal)
             ctlVal = self->analogValue;
         }
     }
+    int index = 0;
 
-    MmsValue_setElement(selValParameters, 0, ctlVal);
+    //因为在ControlObjectClient_Create中已经校验了本结构，所以此处一定会成功
+    MmsVariableSpecification* sbow = MmsVariableSpecification_getNamedVariableRecursive(self->ctlVarSpec, "SBOw");
+    for (int i = 0; i < sbow->typeSpec.structure.elementCount; i++) 
+    {
+        //printf("%s\n", sbow->typeSpec.structure.elements[i]->name);
+        if (strcmp(sbow->typeSpec.structure.elements[i]->name, "ctlVal") == 0 ||
+            strcmp(sbow->typeSpec.structure.elements[i]->name, "setMag") == 0)
+        {
+            MmsValue_setElement(selValParameters, index++, ctlVal);
+        }
+        else if (strcmp(sbow->typeSpec.structure.elements[i]->name, "operTm") == 0)
+        {
+            if (self->hasTimeActivatedMode) {
+                MmsValue* operTm = MmsValue_newUtcTimeByMsTime(0);
+                MmsValue_setElement(selValParameters, index++, operTm);
+            }
+        }
+        else if (strcmp(sbow->typeSpec.structure.elements[i]->name, "origin") == 0)
+        {
+            MmsValue* origin = createOriginValue(self);
+            MmsValue_setElement(selValParameters, index++, origin);
+        }
+        else if (strcmp(sbow->typeSpec.structure.elements[i]->name, "ctlNum") == 0)
+        {
+            self->ctlNum++;
+            if (self->hasCtlNum) {
+                MmsValue* ctlNum = MmsValue_newUnsignedFromUint32(self->ctlNum);
+                MmsValue_setElement(selValParameters, index++, ctlNum);
+            }
+        }
+        else if (strcmp(sbow->typeSpec.structure.elements[i]->name, "T") == 0)
+        {
+            uint64_t timestamp = Hal_getTimeInMs();
+            MmsValue* ctlTime;
 
-    int index = 1;
+            if (self->useConstantT)
+                self->constantT = timestamp;
 
-    if (self->hasTimeActivatedMode) {
-        MmsValue* operTm = MmsValue_newUtcTimeByMsTime(0);
-        MmsValue_setElement(selValParameters, index++, operTm);
+            if (self->edition == 2) {
+                ctlTime = MmsValue_newUtcTimeByMsTime(timestamp);
+
+                if (self->connection)
+                    MmsValue_setUtcTimeQuality(ctlTime, self->connection->timeQuality);
+            }
+            else {
+                ctlTime = MmsValue_newBinaryTime(false);
+                MmsValue_setBinaryTime(ctlTime, timestamp);
+            }
+
+            MmsValue_setElement(selValParameters, index++, ctlTime);
+        }
+        else if (strcmp(sbow->typeSpec.structure.elements[i]->name, "Test") == 0)
+        {
+            MmsValue* ctlTest = MmsValue_newBoolean(self->test);
+            MmsValue_setElement(selValParameters, index++, ctlTest);
+        }
+        else if (strcmp(sbow->typeSpec.structure.elements[i]->name, "Check") == 0)
+        {
+            MmsValue* check = MmsValue_newBitString(2);
+            MmsValue_setBitStringBit(check, 1, self->interlockCheck);
+            MmsValue_setBitStringBit(check, 0, self->synchroCheck);
+            MmsValue_setElement(selValParameters, index++, check);
+        }
     }
-
-    MmsValue* origin = createOriginValue(self);
-    MmsValue_setElement(selValParameters, index++, origin);
-
-    self->ctlNum++;
-
-    if (self->hasCtlNum) {
-        MmsValue* ctlNum = MmsValue_newUnsignedFromUint32(self->ctlNum);
-        MmsValue_setElement(selValParameters, index++, ctlNum);
-    }
-
-    uint64_t timestamp = Hal_getTimeInMs();
-    MmsValue* ctlTime;
-
-    if (self->useConstantT)
-        self->constantT = timestamp;
-
-    if (self->edition == 2) {
-        ctlTime = MmsValue_newUtcTimeByMsTime(timestamp);
-
-        if (self->connection)
-            MmsValue_setUtcTimeQuality(ctlTime, self->connection->timeQuality);
-    }
-    else {
-        ctlTime = MmsValue_newBinaryTime(false);
-        MmsValue_setBinaryTime(ctlTime, timestamp);
-    }
-
-    MmsValue_setElement(selValParameters, index++, ctlTime);
-
-    MmsValue* ctlTest = MmsValue_newBoolean(self->test);
-    MmsValue_setElement(selValParameters, index++, ctlTest);
-
-    MmsValue* check = MmsValue_newBitString(2);
-    MmsValue_setBitStringBit(check, 1, self->interlockCheck);
-    MmsValue_setBitStringBit(check, 0, self->synchroCheck);
-    MmsValue_setElement(selValParameters, index++, check);
 
     return selValParameters;
 }
@@ -1068,45 +1116,64 @@ createCancelParameters(ControlObjectClient self)
     else
         cancelParameters = MmsValue_createEmptyStructure(5);
 
-    MmsValue_setElement(cancelParameters, 0, self->ctlVal);
+    int index = 0;
 
-    int index = 1;
+    //因为在ControlObjectClient_Create中已经校验了本结构，所以此处一定会成功
+    MmsVariableSpecification* cancel = MmsVariableSpecification_getNamedVariableRecursive(self->ctlVarSpec, "Cancel");
+    for (int i = 0; i < cancel->typeSpec.structure.elementCount; i++)
+    {
+        //printf("%s\n", cancel->typeSpec.structure.elements[i]->name);
+        if (strcmp(cancel->typeSpec.structure.elements[i]->name, "ctlVal") == 0 ||
+            strcmp(cancel->typeSpec.structure.elements[i]->name, "setMag") == 0)
+        {
+            MmsValue_setElement(cancelParameters, index++, self->ctlVal);
+        }
+        else if (strcmp(cancel->typeSpec.structure.elements[i]->name, "operTm") == 0)
+        {
+            if (self->hasTimeActivatedMode) {
+                MmsValue* operTm = MmsValue_newUtcTimeByMsTime(self->opertime);
+                MmsValue_setElement(cancelParameters, index++, operTm);
+            }
+        }
+        else if (strcmp(cancel->typeSpec.structure.elements[i]->name, "origin") == 0)
+        {
+            MmsValue* origin = createOriginValue(self);
+            MmsValue_setElement(cancelParameters, index++, origin);
+        }
+        else if (strcmp(cancel->typeSpec.structure.elements[i]->name, "ctlNum") == 0)
+        {
+            MmsValue* ctlNum = MmsValue_newUnsignedFromUint32(self->ctlNum);
+            MmsValue_setElement(cancelParameters, index++, ctlNum);
+        }
+        else if (strcmp(cancel->typeSpec.structure.elements[i]->name, "T") == 0)
+        {
+            uint64_t timestamp;
 
-    if (self->hasTimeActivatedMode) {
-        MmsValue* operTm = MmsValue_newUtcTimeByMsTime(self->opertime);
-        MmsValue_setElement(cancelParameters, index++, operTm);
+            if (self->useConstantT)
+                timestamp = self->constantT;
+            else
+                timestamp = Hal_getTimeInMs();
+
+            MmsValue* ctlTime;
+
+            if (self->edition == 2) {
+                ctlTime = MmsValue_newUtcTimeByMsTime(timestamp);
+
+                if (self->connection)
+                    MmsValue_setUtcTimeQuality(ctlTime, self->connection->timeQuality);
+            }
+            else {
+                ctlTime = MmsValue_newBinaryTime(false);
+                MmsValue_setBinaryTime(ctlTime, timestamp);
+            }
+            MmsValue_setElement(cancelParameters, index++, ctlTime);
+        }
+        else if (strcmp(cancel->typeSpec.structure.elements[i]->name, "Test") == 0)
+        {
+            MmsValue* ctlTest = MmsValue_newBoolean(self->test);
+            MmsValue_setElement(cancelParameters, index++, ctlTest);
+        }
     }
-
-    MmsValue* origin = createOriginValue(self);
-
-    MmsValue_setElement(cancelParameters, index++, origin);
-
-    MmsValue* ctlNum = MmsValue_newUnsignedFromUint32(self->ctlNum);
-    MmsValue_setElement(cancelParameters, index++, ctlNum);
-
-    uint64_t timestamp;
-
-    if (self->useConstantT)
-        timestamp = self->constantT;
-    else
-        timestamp = Hal_getTimeInMs();
-
-    MmsValue* ctlTime;
-
-    if (self->edition == 2) {
-        ctlTime = MmsValue_newUtcTimeByMsTime(timestamp);
-
-        if (self->connection)
-            MmsValue_setUtcTimeQuality(ctlTime, self->connection->timeQuality);
-    }
-    else {
-        ctlTime = MmsValue_newBinaryTime(false);
-        MmsValue_setBinaryTime(ctlTime, timestamp);
-    }
-    MmsValue_setElement(cancelParameters, index++, ctlTime);
-
-    MmsValue* ctlTest = MmsValue_newBoolean(self->test);
-    MmsValue_setElement(cancelParameters, index++, ctlTest);
 
     return cancelParameters;
 }
