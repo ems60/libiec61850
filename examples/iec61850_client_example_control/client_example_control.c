@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
          ***********************/
 
         ControlObjectClient control
-            = ControlObjectClient_create("simpleIOGenericIO/GGIO1.SPCSO1", con);
+            = ControlObjectClient_create("simpleIOGenericIO/GGIO1.SPCSO1", con, FunctionalConstraint::IEC61850_FC_CO);
 
         if (control)
         {
@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
 
             ControlObjectClient_setOrigin(control, NULL, 3);
 
-            if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */)) {
+            if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */, FunctionalConstraint::IEC61850_FC_CO)) {
                 printf("simpleIOGenericIO/GGIO1.SPCSO1 operated successfully\n");
             }
             else {
@@ -97,15 +97,15 @@ int main(int argc, char** argv) {
          * Select before operate
          ***********************/
 
-        control = ControlObjectClient_create("simpleIOGenericIO/GGIO1.SPCSO2", con);
+        control = ControlObjectClient_create("simpleIOGenericIO/GGIO1.SPCSO2", con, FunctionalConstraint::IEC61850_FC_CO);
 
         if (control)
         {
-            if (ControlObjectClient_select(control)) {
+            if (ControlObjectClient_select(control, FunctionalConstraint::IEC61850_FC_CO)) {
 
                 ctlVal = MmsValue_newBoolean(true);
 
-                if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */)) {
+                if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */, FunctionalConstraint::IEC61850_FC_CO)) {
                     printf("simpleIOGenericIO/GGIO1.SPCSO2 operated successfully\n");
                 }
                 else {
@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
          * Direct control with enhanced security
          ****************************************/
 
-        control = ControlObjectClient_create("simpleIOGenericIO/GGIO1.SPCSO3", con);
+        control = ControlObjectClient_create("simpleIOGenericIO/GGIO1.SPCSO3", con, FunctionalConstraint::IEC61850_FC_CO);
 
         if (control)
         {
@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
 
             ctlVal = MmsValue_newBoolean(true);
 
-            if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */)) {
+            if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */, FunctionalConstraint::IEC61850_FC_CO)) {
                 printf("simpleIOGenericIO/GGIO1.SPCSO3 operated successfully\n");
             }
             else {
@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
          * Select before operate with enhanced security
          ***********************************************/
 
-        control = ControlObjectClient_create("simpleIOGenericIO/GGIO1.SPCSO4", con);
+        control = ControlObjectClient_create("simpleIOGenericIO/GGIO1.SPCSO4", con, FunctionalConstraint::IEC61850_FC_CO);
 
         if (control)
         {
@@ -181,9 +181,9 @@ int main(int argc, char** argv) {
 
             ctlVal = MmsValue_newBoolean(true);
 
-            if (ControlObjectClient_selectWithValue(control, ctlVal)) {
+            if (ControlObjectClient_selectWithValue(control, ctlVal, FunctionalConstraint::IEC61850_FC_CO)) {
 
-                if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */)) {
+                if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */, FunctionalConstraint::IEC61850_FC_CO)) {
                     printf("simpleIOGenericIO/GGIO1.SPCSO4 operated successfully\n");
                 }
                 else {
@@ -210,7 +210,7 @@ int main(int argc, char** argv) {
          * Direct control with enhanced security (expect CommandTermination-)
          *********************************************************************/
 
-        control = ControlObjectClient_create("simpleIOGenericIO/GGIO1.SPCSO9", con);
+        control = ControlObjectClient_create("simpleIOGenericIO/GGIO1.SPCSO9", con, FunctionalConstraint::IEC61850_FC_CO);
 
         if (control)
         {
@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
 
             ctlVal = MmsValue_newBoolean(true);
 
-            if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */)) {
+            if (ControlObjectClient_operate(control, ctlVal, 0 /* operate now */, FunctionalConstraint::IEC61850_FC_CO)) {
                 printf("simpleIOGenericIO/GGIO1.SPCSO9 operated successfully\n");
             }
             else {

@@ -273,7 +273,7 @@ int main(int argc, char** argv) {
 
             Thread_sleep(1000);
 
-            ControlObjectClient controlClient = ControlObjectClient_create("simpleIOGenericIO/GGIO1.SPCSO1", con);
+            ControlObjectClient controlClient = ControlObjectClient_create("simpleIOGenericIO/GGIO1.SPCSO1", con, FunctionalConstraint::IEC61850_FC_CO);
 
             if (controlClient != NULL) {
 
@@ -281,7 +281,7 @@ int main(int argc, char** argv) {
 
                 MmsValue* ctlVal = MmsValue_newBoolean(true);
 
-                ControlObjectClient_operateAsync(controlClient, &error, ctlVal, 0, controlActionHandler, NULL);
+                ControlObjectClient_operateAsync(controlClient, &error, ctlVal, 0, controlActionHandler, NULL, FunctionalConstraint::IEC61850_FC_CO);
 
                 if (error != IED_ERROR_OK) {
                     printf("Failed to send operate %i\n", error);
